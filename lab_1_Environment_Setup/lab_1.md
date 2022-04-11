@@ -64,15 +64,6 @@ $ docker run -ti --rm -v <absolute/path/to/onnc>:/onnc/onnc -v <absolute/path/to
 
 Docker 컨테이너 내에서 다음 명령을 사용하여 ONNC를 빌드합니다.
 
-
-* `<absolute/path/to/onnc>` is the directory where you clone the ONNC source code. Note that it must be the absolute path other than a relative path.
-* `<absolute/path/to/tutorial>` is the directory where you clone the ONNC tutorial material.
-* The `-ti` option provides an interactive interface for the container.
-* The `--rm` option will automatically clean up the container when the container exits.
-* The `-v` option mounts the directory to the Docker container. With this option, you can make change to the source code (<path/to/onnc>) outside the Docker container with your favorite editor, and the change can be seen inside the Docker container and gets compiled.
-
-Within the Docker container, use the following commands to build ONNC.
-
 ```sh
 # Within onnc/onnc-community Docker container
 
