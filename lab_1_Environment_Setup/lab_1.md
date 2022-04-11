@@ -2,19 +2,19 @@
 
 ## Preface
 
-This tutorial targets at using ONNC to generate Loadables that contains DNN model graph information for running inference on NVDLA-based SoCs. Most information in this tutorial is specifically tailored to the NVDLA backend porting.   
-To facilitate the software development process, an ONNC Docker image is available in the Docker Hub for fast deployment. It has pre-installed dependent libraries and is a ready-to-run working environment. Users can mount ONNC source code into the Docker container and build the source code inside the container. In addition, the built ONNC binary can be executed to compile deep neural network (DNN) models inside the container. ONNC currently provides two backend implementations in the GitHub release v1.2. For the x86 backend, users may run model inference using the embedded interpreter, ONNI. For the NVDLA backend, a Loadable file that contains model graph information is generated after compilation. Users may simulate the model inference by running the Loadable files on an NVDLA virtual platform. The [NVIDIA Deep Learning Accelerator (NVDLA)](http://nvdla.org/index.html) release provides a full-featured virtual platform for full-system software simulation. We leverage the officially released virtual platform and make small changes for this tutorial. 
+이 튜토리얼은 ONNC를 사용하여 NVDLA 기반 SoC에서 추론을 실행하기 위한 DNN 모델 그래프 정보가 포함된 Loadables를 생성하는 것을 목표로 합니다. 이 튜토리얼의 대부분의 정보는 NVDLA 백엔드 포팅에 특별히 맞춰져 있습니다.
+소프트웨어 개발 프로세스를 용이하게 하기 위해 ONNC Docker 이미지가 Docker Hub에서 제공되어 빠른 배포가 가능합니다. 사전 설치된 종속 라이브러리가 있으며 바로 실행할 수 있는 작업 환경입니다. 사용자는 ONNC 소스 코드를 Docker 컨테이너에 탑재하고 컨테이너 내부에 소스 코드를 빌드할 수 있습니다. 또한 빌드된 ONNC 바이너리를 실행하여 컨테이너 내부의 심층 신경망(DNN) 모델을 컴파일할 수 있습니다. ONNC는 현재 GitHub 릴리스 v1.2에서 두 가지 백엔드 구현을 제공합니다. x86 백엔드의 경우 사용자는 내장 인터프리터인 ONNI를 사용하여 모델 추론을 실행할 수 있습니다. NVDLA 백엔드의 경우 컴파일 후 모델 그래프 정보가 포함된 로드 가능 파일이 생성됩니다. 사용자는 NVDLA 가상 플랫폼에서 로드 가능한 파일을 실행하여 모델 추론을 시뮬레이션할 수 있습니다. [NVIDIA Deep Learning Accelerator (NVDLA)](http://nvdla.org/index.html) 릴리스는 전체 시스템 소프트웨어 시뮬레이션을 위한 모든 기능을 갖춘 가상 플랫폼을 제공합니다. 우리는 공식적으로 출시된 가상 플랫폼을 활용하고 이 튜토리얼을 위해 약간의 변경을 합니다.
 
-In the first Lab, we will describe and demonstrate how to build ONNC, compile models using ONNC, and simulate the model inference on our pre-packed virtual platform.
+첫 번째 실습에서는 ONNC를 구축하고, ONNC를 사용하여 모델을 컴파일하고, 사전 포장된 가상 플랫폼에서 모델 추론을 시뮬레이션하는 방법을 설명하고 시연합니다.
 
 ## Prerequisite
 
-If Docker is not installed in your system, please download Docker (http://www.docker.com) and install it first.
-You also need to install Git (https://git-scm.com/) to retrieve the source codes from Git servers.
+시스템에 Docker가 설치되어 있지 않은 경우 Docker(http://www.docker.com)를 먼저 다운로드하여 설치하십시오.
+또한 Git 서버에서 소스 코드를 검색하려면 Git(https://git-scm.com/)을 설치해야 합니다.
 
 ## Preparing Source Code and Docker Images
 
-The latest ONNC source code is available on GitHub. Please follow the following commands to download the source code.
+최신 ONNC 소스 코드는 GitHub에서 사용할 수 있습니다. 소스 코드를 다운로드하려면 다음 명령을 따르십시오.
 
 ```sh
 $ git clone https://github.com/ONNC/onnc.git
@@ -23,13 +23,13 @@ $ git checkout tags/1.3.0
 $ cd ..
 ```
 
-Use the following command to download the tutorial material. There are some example DNN models and code snippets you will use in the subsequent labs.
+다음 명령을 사용하여 튜토리얼 자료를 다운로드하십시오. 다음 실습에서 사용할 몇 가지 예시 DNN 모델 및 코드 조각이 있습니다.
 
 ```sh
 $ git clone https://github.com/ONNC/onnc-tutorial.git
 ```
 
-Pull the Docker image from the Docker Hub using the following commands.
+다음 명령을 사용하여 Docker Hub에서 Docker 이미지를 가져옵니다.
 
 ```sh
 # We need two Docker images.
@@ -38,7 +38,7 @@ $ docker pull onnc/onnc-community
 $ docker pull onnc/vp
 ```
 
-To verify that the Docker images were downloaded successfully, use the following command to show all available Docker images. You should see both `onnc/onnc-community` and `onnc/vp` images.
+Docker 이미지가 성공적으로 다운로드되었는지 확인하려면 다음 명령을 사용하여 사용 가능한 모든 Docker 이미지를 표시하십시오. 'onnc/onnc-community' 및 'onnc/vp' 이미지가 모두 표시되어야 합니다.
 
 ```sh
 $ docker images
@@ -50,7 +50,7 @@ onnc/vp                              latest                             889c0039
 
 ## Building ONNC and Compiling DNN Models
 
-Use the following command to bring up the ONNC-community Docker.
+다음 명령을 사용하여 ONNC 커뮤니티 Docker를 불러옵니다.
 
 ```sh
 $ docker run -ti --rm -v <absolute/path/to/onnc>:/onnc/onnc -v <absolute/path/to/tutorial>:/tutorial onnc/onnc-community
