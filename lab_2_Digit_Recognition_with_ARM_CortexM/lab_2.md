@@ -3,41 +3,41 @@
 
 ## Preface
 
-Machine learning is moving to the edge. People want to have edge computing capability on embedded devices to provide more advanced services, like voice recognition for smart speakers and face detection for surveillance cameras. The Arm Cortex-M processor family is a range of scalable, energy-efficient and easy-to-use processors that meet the needs of smart and connected embedded applications. Cortex Microcontroller Software Interface Standard (CMSIS) is a vendor-independent hardware abstraction layer for the Cortex-M processor series. Research (https://arxiv.org/abs/1801.06601) has shown that machine learning has a proven 4.6X boost on the Cortex-M platform with the new CMSIS-NN software framework. In this lab, we will introduce an ONNC backend, `CortexM` backend, for the ARM Cortex-M microprocessor and demonstrate an end-to-end application, hand-writing recognition. The CortexM backend integrates the [CMSIS-NN library](https://github.com/ARM-software/CMSIS_5) that provides a set of computing functions for several popular operators in deep neural network (DNN) models, such as convolution, maximum pooling, etc. The library is optimized for speeding up the model inference on ARM Cortex-M CPUs.  The following figure shows an example of the mapping between the model operators and the CMSIS-NN function calls.
+머신 러닝이 엣지로 이동하고 있습니다. 사람들은 스마트 스피커를 위한 음성 인식 및 감시 카메라를 위한 얼굴 감지와 같은 고급 서비스를 제공하기 위해 임베디드 장치에 에지 컴퓨팅 기능을 갖기를 원합니다. Arm Cortex-M 프로세서 제품군은 스마트하고 연결된 임베디드 애플리케이션의 요구 사항을 충족하는 확장 가능하고 에너지 효율적이며 사용하기 쉬운 프로세서입니다. Cortex CMSIS(마이크로컨트롤러 소프트웨어 인터페이스 표준)는 Cortex-M 프로세서 시리즈를 위한 공급업체 독립적인 하드웨어 추상화 계층입니다. 연구(https://arxiv.org/abs/1801.06601)에 따르면 기계 학습은 새로운 CMSIS-NN 소프트웨어 프레임워크가 있는 Cortex-M 플랫폼에서 입증된 4.6배 향상되었습니다. 이 실습에서는 ARM Cortex-M 마이크로프로세서를 위한 ONNC 백엔드 'CortexM' 백엔드를 소개하고 종단 간 애플리케이션, 필기 인식을 시연합니다. CortexM 백엔드는 [CMSIS-NN 라이브러리](https://github.com/ARM-software/CMSIS_5)를 통합하여 다음과 같은 심층 신경망(DNN) 모델에서 여러 인기 있는 운영자를 위한 컴퓨팅 기능 세트를 제공합니다. 컨볼루션, 최대 풀링 등. 라이브러리는 ARM Cortex-M CPU에서 모델 추론 속도를 높이는 데 최적화되어 있습니다. 다음 그림은 모델 연산자와 CMSIS-NN 함수 호출 간의 매핑 예를 보여줍니다.
 
 <img src="../figures/cortexm_code_snapshot.png" width="450">
 
-In this lab, we will use an end-to-end application to demonstrate how the ONNC framework supports AI inferences for a target hardware easily. 
+이 실습에서는 종단 간 응용 프로그램을 사용하여 ONNC 프레임워크가 대상 하드웨어에 대한 AI 추론을 쉽게 지원하는 방법을 보여줍니다.
 
 ## Deploying MNIST Model Inference on an Embedded System
 
-The following diagram depicts how we deploy MNIST model inference on an Cortex-M platform.
+다음 다이어그램은 Cortex-M 플랫폼에서 MNIST 모델 추론을 배포하는 방법을 보여줍니다.
 
 <img src="../figures/cortexm_flow.png" width="450">
 
-Typically, machine learning models are trained with floating-point data on GPU graphic cards or servers, but running inference in lower precision is preferred on embedded devices due to limited computation power. Fortunately, several research papers have proved that quantizing the data into integers can usually be performed without any loss of performance (i.e. accuracy). In this lab, we have prepared a quantized MNIST model in ONNX format. The input data and the weights are all of 8-bit integers. When running inference, the internal computation datapath might have a higher precision than 8 bits to avoid accuracy loss, but the activation data precision is converted back to 8 bits in the implementation. Many CMSIS-NN functions simply use "shift-right" logic to perform the bit-width conversion. The amount of shift-right is typically determined together with the weight quantization, so we leave it as one user input in the Cortex-M backend. The ONNX model format does not contain calibration information on the activation data. We have prepared a separate file, called the calibration file, to store the shift-right information.
+일반적으로 기계 학습 모델은 GPU 그래픽 카드 또는 서버에서 부동 소수점 데이터로 훈련되지만 제한된 계산 능력으로 인해 임베디드 장치에서 더 낮은 정밀도로 추론을 실행하는 것이 선호됩니다. 다행히도 여러 연구 논문에서 데이터를 정수로 양자화하는 것이 일반적으로 성능(즉, 정확도) 손실 없이 수행될 수 있음을 입증했습니다. 이 실습에서는 ONNX 형식의 양자화된 MNIST 모델을 준비했습니다. 입력 데이터와 가중치는 모두 8비트 정수입니다. 추론을 실행할 때 내부 계산 데이터 경로는 정확도 손실을 피하기 위해 8비트보다 더 높은 정밀도를 가질 수 있지만 활성화 데이터 정밀도는 구현에서 다시 8비트로 변환됩니다. 많은 CMSIS-NN 기능은 단순히 "오른쪽으로 이동" 논리를 사용하여 비트 너비 변환을 수행합니다. 오른쪽 시프트의 양은 일반적으로 가중치 양자화와 함께 결정되므로 Cortex-M 백엔드에서 하나의 사용자 입력으로 남겨둡니다. ONNX 모델 형식에는 활성화 데이터에 대한 보정 정보가 포함되어 있지 않습니다. 오른쪽 시프트 정보를 저장하기 위해 보정 파일이라는 별도의 파일을 준비했습니다.
 
-After compiling the MNIST model inference application (as `.cpp` file) using ONNC, we use the ARM cross-compiler to compile and link the application and the CMSIS-NN library together. The application software depends on the underlying embedded system and the target application. Users may find hardware-dependent information from vendors. Once the firmware binary is ready, we upload the binary file into the target board by an ISP tool that should be provided by the board vendor. 
+ONNC를 사용하여 MNIST 모델 추론 응용 프로그램(`.cpp' 파일)을 컴파일한 후 ARM 크로스 컴파일러를 사용하여 응용 프로그램과 CMSIS-NN 라이브러리를 함께 컴파일하고 연결합니다. 응용 프로그램 소프트웨어는 기본 임베디드 시스템과 대상 응용 프로그램에 따라 다릅니다. 사용자는 공급업체로부터 하드웨어 종속 정보를 찾을 수 있습니다. 펌웨어 바이너리가 준비되면 보드 공급업체에서 제공해야 하는 ISP 도구를 통해 바이너리 파일을 대상 보드에 업로드합니다.
 
 ## Prerequisite
 
-If Docker is not installed in your system, please download Docker (http://www.docker.com) and install it first. In addition, you need to install Git (https://git-scm.com/) to fetch the source code from the GitHub server. Furthermore, the demonstration uses a popular GUI programming framework, Processing, please install Processing (https://processing.org/) as well. Lastly, you need to prepare a development board equipped with ARM Cortex-M CPU. We suggest to use [Mbed compatible boards](https://os.mbed.com/platforms/) because we use the [Mbed framework](https://www.mbed.com/en/) for the firmware compilation. If your board is not compatible with Mbed, you might need to rewrite some demonstration code following the regulation from the board vendor. 
+시스템에 Docker가 설치되어 있지 않은 경우 Docker(http://www.docker.com)를 먼저 다운로드하여 설치하십시오. 또한 GitHub 서버에서 소스 코드를 가져오려면 Git(https://git-scm.com/)을 설치해야 합니다. 또한 데모에서는 널리 사용되는 GUI 프로그래밍 프레임워크인 Processing을 사용하므로 Processing(https://processing.org/)도 설치하세요. 마지막으로 ARM Cortex-M CPU가 탑재된 개발 보드를 준비해야 합니다. 펌웨어 컴파일에 [Mbed compatible boards](https://os.mbed.com/platforms/)를 사용하기 때문에 [Mbed framework](https://www.mbed.com/en/)를 사용하는 것이 좋습니다. 보드가 Mbed와 호환되지 않는 경우 보드 공급업체의 규정에 따라 일부 데모 코드를 다시 작성해야 할 수 있습니다.
 
 ## Preparing Source Code and Docker Images
 
-The ONNC source code for Cortex-M is available online. Use the following command to download the ONNC source code.
+Cortex-M의 ONNC 소스 코드는 온라인에서 사용할 수 있습니다. 다음 명령을 사용하여 ONNC 소스 코드를 다운로드합니다.
 
 ```sh
 $ git clone -b CortexM https://github.com/ONNC/onnc.git
 ```
 
-Next, use the following command to download the tutorial source code. There are some example DNN models you will use in this lab.
+그런 다음 다음 명령을 사용하여 자습서 소스 코드를 다운로드합니다. 이 실습에서 사용할 몇 가지 예시 DNN 모델이 있습니다.
 
 ```sh
 $ git clone https://github.com/ONNC/onnc-tutorial.git
 ```
 
-Pull the Docker images from the Docker Hub using the following commands.
+다음 명령을 사용하여 Docker Hub에서 Docker 이미지를 가져옵니다.
 
 ```sh
 # Obtain the ONNC compilation environment.
@@ -47,7 +47,7 @@ $ docker pull onnc/onnc-community
 $ docker pull misegr/mbed-cli
 ```
 
-To verify that the Docker images were downloaded successfully, use the following command to show all available Docker images. You should see both `onnc/onnc-community` and `misegr/mbed-cli` images.
+Docker 이미지가 성공적으로 다운로드되었는지 확인하려면 다음 명령을 사용하여 사용 가능한 모든 Docker 이미지를 표시하십시오. `onnc/onnc-community` 및 `misegr/mbed-cli` 이미지가 모두 표시되어야 합니다.
 
 
 ```sh
@@ -59,12 +59,12 @@ misegr/mbed-cli                      latest                             a708c25b
 
 ## Building ONNC and Compiling Digit-Recognition Models
 
-Use this command to bring up the ONNC-community Docker.
+이 명령을 사용하여 ONNC 커뮤니티 Docker를 불러옵니다.
 
 ```sh
 $ docker run -ti --rm -v <absolute/path/to/onnc>:/onnc/onnc -v <absolute/path/to/tutorial>:/tutorial onnc/onnc-community
 ```
-Please refer to [lab 1: Environment Setup](../lab_1_Environment_Setup/lab_1.md) for Docker's command usage. Within the Docker container, use the following commands to build ONNC.
+Docker 명령어 사용법은 [lab 1: Environment Setup](../lab_1_Environment_Setup/lab_1.md)을 참고하세요. Docker 컨테이너 내에서 다음 명령을 사용하여 ONNC를 빌드합니다.
 
 ```sh
 ##############################################
@@ -77,7 +77,7 @@ $ cd /onnc/onnc-umbrella/build-normal
 $ smake -j8 install
 ```
 
-Up to this point, you should have the ONNC binary ready to compile DNN models. As we have mentioned earlier, the DNN model used for this lab must have been quantized, and all of its weights are 8-bit integers. In addition, a calibration file with shift-right values on all activation data must be prepared as well. In this lab, we obtained the [mnist model](https://github.com/onnx/models/tree/master/vision/classification/mnist) from the ONNX model zoo, and performed post-training quantization to derive its quantized version. Once all files are ready (you may find a copy in the `<onnc-tutorial>/models/quantized_mnist/` folder), use the following commands to compile the model and generate C codes.
+이 시점까지 ONNC 바이너리가 DNN 모델을 컴파일할 준비가 되어 있어야 합니다. 앞서 언급했듯이 이 실습에 사용되는 DNN 모델은 양자화되어야 하며 모든 가중치는 8비트 정수입니다. 또한 모든 활성화 데이터에 대한 오른쪽 시프트 값이 포함된 보정 파일도 준비해야 합니다. 이 실습에서는 ONNX 모델 동물원에서 [mnist model](https://github.com/onnx/models/tree/master/vision/classification/mnist)을 얻었고, 훈련 후 양자화를 수행하여 양자화된 버전을 도출했습니다. 모든 파일이 준비되면(`<onnc-tutorial>/models/quantized_mnist/` 폴더에서 복사본을 찾을 수 있음) 다음 명령을 사용하여 모델을 컴파일하고 C 코드를 생성합니다.
 
 ```sh
 ##############################################
