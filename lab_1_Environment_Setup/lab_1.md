@@ -56,6 +56,15 @@ onnc/vp                              latest                             889c0039
 $ docker run -ti --rm -v <absolute/path/to/onnc>:/onnc/onnc -v <absolute/path/to/tutorial>:/tutorial onnc/onnc-community
 ```
 
+* `<absolute/path/to/onnc>`는 ONNC 소스 코드를 복제하는 디렉토리입니다. 상대 경로가 아닌 절대 경로여야 합니다.
+* `<absolute/path/to/tutorial>`은 ONNC 튜토리얼 자료를 복제하는 디렉토리입니다.
+* `-ti` 옵션은 컨테이너에 대한 대화형 인터페이스를 제공합니다.
+* `--rm` 옵션은 컨테이너가 종료될 때 컨테이너를 자동으로 정리합니다.
+* `-v` 옵션은 디렉토리를 Docker 컨테이너에 마운트합니다. 이 옵션을 사용하면 선호하는 편집기를 사용하여 Docker 컨테이너 외부의 소스 코드(<path/to/onnc>)를 변경할 수 있으며 변경 사항은 Docker 컨테이너 내부에서 확인되고 컴파일될 수 있습니다.
+
+Docker 컨테이너 내에서 다음 명령을 사용하여 ONNC를 빌드합니다.
+
+
 * `<absolute/path/to/onnc>` is the directory where you clone the ONNC source code. Note that it must be the absolute path other than a relative path.
 * `<absolute/path/to/tutorial>` is the directory where you clone the ONNC tutorial material.
 * The `-ti` option provides an interactive interface for the container.
@@ -73,9 +82,9 @@ $ cd /onnc/onnc-umbrella/build-normal
 $ smake -j8 install
 ```
 
-* The `smake` command synchronizes the build directory with `<path/to/onnc>/onnc` and invokes the make command to build ONNC. 
-* The `-j8` option is to parallelize compilation with 8 CPU cores.
-* This command will automatically install the compiled binary in this container environment.
+* `smake` 명령은 빌드 디렉토리를 `<path/to/onnc>/onnc`와 동기화하고 make 명령을 호출하여 ONNC를 빌드합니다.
+* `-j8` 옵션은 8개의 CPU 코어로 컴파일을 병렬화하는 것입니다.
+* 이 명령은 이 컨테이너 환경에 컴파일된 바이너리를 자동으로 설치합니다.
 
 ```sh
 # Run ONNC to compile a DNN model.
@@ -85,7 +94,7 @@ $ onnc -mquadruple nvdla /tutorial/models/lenet/lenet.onnx
 $ sudo mv out.nvdla /tutorial/models/lenet/
 ```
 
-You may use the following command to exit the Docker prompt, 
+다음 명령을 사용하여 Docker 프롬프트를 종료할 수 있습니다.
 
 ```sh
 # Within the onnc/onnc-community Docker container
@@ -94,7 +103,7 @@ $ exit
 
 ## Performing Model Inference on Virtual Platform
 
-When you finish building ONNC and compiling a DNN model, you do not need the `onnc/onnc-community` Docker anymore. Start another console/terminal on your computer to enter the other Docker image called `onnc/vp` for model inference.
+ONNC 빌드 및 DNN 모델 컴파일을 마치면 'onnc/onnc-community' Docker가 더 이상 필요하지 않습니다. 컴퓨터에서 다른 콘솔/터미널을 시작하여 모델 추론을 위해 `onnc/vp`라는 다른 Docker 이미지를 입력합니다.
 
 ```sh
 # Within your computer console
@@ -102,11 +111,11 @@ When you finish building ONNC and compiling a DNN model, you do not need the `on
 $ docker run -ti --rm -v <absolute/path/to/tutorial>:/tutorial onnc/vp
 ```
 
-The virtual platform in this Docker is used to simulate the NVDLA runtime environment. As the following figure shows, the virtual platform contains a systemC model for the NVDLA hardware as well as a CPU emulator, where a Linux OS and NVDLA drivers are running to drive the NVDLA hardware.
+이 Docker의 가상 플랫폼은 NVDLA 런타임 환경을 시뮬레이션하는 데 사용됩니다. 다음 그림에서 볼 수 있듯이 가상 플랫폼에는 NVDLA 하드웨어용 systemC 모델과 CPU 에뮬레이터가 포함되어 있습니다. 여기서 Linux OS 및 NVDLA 드라이버가 실행되어 NVDLA 하드웨어를 구동합니다.
 
 <img src="../figures/runtime_env.png" width="400">
 
-Within the VP Docker container, use the following commands to activate the virtual platform.
+VP Docker 컨테이너 내에서 다음 명령을 사용하여 가상 플랫폼을 활성화합니다.
 
 ```sh
 # Within onnc/vp Docker container
@@ -144,12 +153,12 @@ Welcome to Buildroot
 nvdla login:
 ```
 
-By starting the virtual platform, a Linux kernel is brought up and stops at the login prompt.
+가상 플랫폼을 시작하면 Linux 커널이 실행되고 로그인 프롬프트에서 중지됩니다.
 
-* nvdla login: root
-* Password: nvdla
+* nvdla 로그인: 루트
+* 비밀번호: nvdla
 
-After logging into the Linux prompt, use the following commands to install the drivers.
+Linux 프롬프트에 로그인한 후 다음 명령을 사용하여 드라이버를 설치합니다.
 
 ```sh
 # Within the virtual platform
@@ -163,7 +172,7 @@ $ insmod drm.ko && insmod opendla.ko
 [  469.737998] [drm] Initialized nvdla 0.0.0 20171017 for 10200000.nvdla on minor 0
 ```
 
-Up to this point, everything is ready for running model inference. In this lab, we demonstrate with a real-world model, LeNet, which is used for hand-written digit recognition. We have prepared some 28x28 images (`.pgm` files) to represent digit numbers 0 to 9. We begin with running model inference to recognize digit number 0 with input file `input0.pgm`. The inference simulation will take about a few minutes. 
+이 시점까지 모든 것이 모델 추론을 실행할 준비가 되었습니다. 이 실습에서는 손으로 쓴 숫자 인식에 사용되는 실제 모델인 LeNet으로 시연합니다. 0에서 9까지의 숫자를 나타내기 위해 28x28 이미지(`.pgm` 파일)를 준비했습니다. 입력 파일 `input0.pgm`으로 숫자 0을 인식하는 모델 추론을 실행하는 것으로 시작합니다. 추론 시뮬레이션은 몇 분 정도 걸립니다.
 
 ```sh
 # Within the virtual platform
@@ -182,25 +191,25 @@ Shutdown signal received, exiting
 Test pass
 ```
 
-After the simulation is done, we will derive an output file `output.dimg` containing the model output values.
-In this example, the output file should look like the follows:
+시뮬레이션이 완료되면 모델 출력 값이 포함된 출력 파일 'output.dimg'를 파생합니다.
+이 예에서 출력 파일은 다음과 같아야 합니다.
 
 ```sh
 $ more output.dimg
 149.25 -49.625 13.875 11.2344 -59.8125 -2.61523 7.80078 -44.7188 30.8594 17.3594
 ```
 
-In the file, there are ten numbers indicating the confidence level of the 10 digits from 0 to 9, respectively.
-For example, the first number 149.25 indicates the confidence level of digit 0, and the next -49.625 of digit 1, and so on. Among those numbers, the largest one implies the recognition result. In this case, the first number 149.25 is the largest one, so the corresponding digit 0 is the recognition result.
+파일에는 각각 0에서 9까지 10자리의 신뢰 수준을 나타내는 10개의 숫자가 있습니다.
+예를 들어, 첫 번째 숫자 149.25는 숫자 0의 신뢰 수준을 나타내고 숫자 1의 다음 -49.625 등을 나타냅니다. 그 중 가장 큰 숫자가 인식 결과를 의미합니다. 이 경우 첫 번째 숫자 149.25가 가장 큰 숫자이므로 해당 숫자 0이 인식 결과입니다.
 
-After the experiment, you can use the following command to exit the virtual platform.
+실험 후 다음 명령을 사용하여 가상 플랫폼을 종료할 수 있습니다.
 
 ```sh
 # Within the virtual platform
 $ poweroff
 ```
 
-Use the following command to exit the `onnc/vp` Docker prompt.
+다음 명령을 사용하여 `onnc/vp` Docker 프롬프트를 종료합니다.
 
 ```sh
 # Within the onnc/vp Docker container
